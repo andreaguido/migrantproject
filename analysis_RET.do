@@ -1,12 +1,19 @@
+**********************************
+***ANALYSIS OF AMOUNTS RETURNED***
+**********************************
+* DEFINE DIRECTORIES
 global data_root "Data"
 global output_root "Output"
-
 
 cd "$data_root"
 use data_sender, clear
 
+* use file clean_data_SENT.do to clean up the data
 cd ..
 run "clean_data_SENT.do"
+* use the file FE.do to compute forecast errors (see paper)
+run "compute_FE.do"
+
 
 **create dummy sud and treatment
 gen sud_X_ingroup = sud*ingroup
@@ -53,6 +60,21 @@ eststo: tobit exp_receiver_norm sud sud_X_ingroup ave_return_norm $controls , ll
 cd ..
 cd "$output_root"
 esttab using "table_beliefs_on_receiver.rtf", b(3) se(3) label replace
+
+*****************Sign tests on forecast errors**********************
+***on amount sent -- check whether more pessimists in South sample
+gen pessimists_return_south = 1 if forecast_error_return_norm <0 & sud == 1
+replace pessimists_return_south = 0 if pessimists_return_south ==. & sud == 1
+gen pessimists_return_north = 1 if forecast_error_return_norm <0 & sud == 0
+replace pessimists_return_north = 0 if pessimists_return_north ==. & sud == 0
+summ pessimists_return_south
+summ pessimists_return_north
+* TEST PROPORTIONS: RESULTS: HIGHER % IN SOUTH THAN IN NORTH (69% VS 47%)
+prtest pessimists_return_south = 0.5
+prtest pessimists_return_north = 0.5
+prtest pessimists_return_south = pessimists_return_north
+* TEST ON FORECAST ERROR MAGNITUDE
+ranksum abs_forecast_error_return_norm , by(sud)
 
 *****************CHECK OF EXPERIMENTER EFFECT***********************
 gen South_X_Experimenter = sud*experimenter
@@ -129,12 +151,17 @@ bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation return_share, iv(sud) 
 *Exp on Receiver
 sgmediation return_share, iv(sud) mv(exp_receiver_norm) cv($controls) quietly
 bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation return_share, iv(sud) mv(exp_receiver_norm) cv($controls) 
+*Amount Sent
+sgmediation return_share, iv(sud) mv(transfer_sm) cv($controls) quietly
+bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation return_share, iv(sud) mv(transfer_sm) cv($controls) 
 
 *All variables:
 *Exp on Senders
 sgmediation return_share, iv(sud) mv(exp_sender) cv(exp_receiver_norm  $controls) quietly
+bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation return_share, iv(sud) mv(exp_sender) cv(exp_receiver_norm  $controls) quietly
 *Exp on Receiver
 sgmediation return_share, iv(sud) mv(exp_receiver_norm) cv(exp_sender  $controls) quietly
+bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation return_share, iv(sud) mv(exp_receiver_norm) cv(exp_sender  $controls) quietly
 
 eststo clear
 
@@ -177,3 +204,14 @@ eststo: xttobit return_share sud years_in_PR_norm years_in_PR_norm_X_sud $contro
 
 cd "$output_root"
 esttab using "table_receiver_decision_beliefs_convergence.rtf", label r2 ar2 replace
+
+***ROBUSTNESS CHECKS***
+* FALSE CONSENSUS
+gen falsecon = 1 if trasferimento == exp_sender
+replace falsecon = 0 if falsecon == .
+
+eststo: xttobit return_share sud falsecon $controls, ll(0) ul(1)
+eststo: xttobit return_share sud transfer_sm transfer_sm_2 falsecon $controls, ll(0) ul(1)
+eststo: xttobit return_share sud exp_sender falsecon $controls, ll(0) ul(1)
+eststo: xttobit return_share sud exp_receiver_norm falsecon $controls, ll(0) ul(1)
+eststo: xttobit return_share sud transfer_sm transfer_sm_2 exp_sender exp_receiver_norm falsecon $controls, ll(0) ul(1)

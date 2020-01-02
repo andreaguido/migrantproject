@@ -1,11 +1,17 @@
+******************************
+***ANALYSIS OF AMOUNTS SENT***
+******************************
+* DEFINE DIRECTORIES
 global data_root "Data"
 global output_root "Output"
 
 cd "$data_root"
 use data_sender, clear
 
+* use file clean_data_SENT.do to clean up the data
 cd ..
 run "clean_data_SENT.do"
+* use the file FE.do to compute forecast errors (see paper)
 run "compute_FE.do"
 
 
@@ -59,12 +65,14 @@ gen pessimists_sender_south = 1 if forecast_error_transfer_all <0 & sud == 1
 replace pessimists_sender_south = 0 if pessimists_sender_south ==. & sud == 1
 gen pessimists_sender_north = 1 if forecast_error_transfer_all <0 & sud == 0
 replace pessimists_sender_north = 0 if pessimists_sender_north ==. & sud == 0
-bysort sud : summ pessimists_sender_south
-bysort sud : summ pessimists_sender_north
+summ pessimists_sender_south
+summ pessimists_sender_north
 * TEST PROPORTIONS: RESULTS: HIGHER % IN SOUTH THAN IN NORTH (69% VS 47%)
 prtest pessimists_sender_south = 0.5
 prtest pessimists_sender_north = 0.5
 prtest pessimists_sender_south = pessimists_sender_north
+* TEST ON FORECAST ERROR MAGNITUDE
+ranksum abs_forecast_error_transfer_all, by(sud)
 
 *****************CHECK OF EXPERIMENTER EFFECT***********************
 gen South_X_Experimenter = sud*experimenter
@@ -135,3 +143,14 @@ bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation trasferimento, iv(sud)
 *Avg returned amount
 sgmediation trasferimento, iv(sud) mv(ave_return_norm) cv(exp_receiver_norm exp_sender $controls) 
 bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation trasferimento, iv(sud) mv(ave_return_norm) cv(exp_receiver_norm exp_sender $controls)
+
+***ROBUSTNESS CHECKS***
+* FALSE CONSENSUS
+gen falsecon = 1 if trasferimento == exp_sender
+replace falsecon = 0 if falsecon == .
+eststo: ologit trasferimento sud $controls, robust
+eststo: ologit trasferimento sud falsecon $controls, robust
+eststo: ologit trasferimento sud exp_sender falsecon $controls, robust
+eststo: ologit trasferimento sud exp_receiver_norm falsecon $controls, robust
+eststo: ologit trasferimento sud ave_return_norm falsecon $controls, robust
+eststo: ologit trasferimento sud exp_sender exp_receiver_norm ave_return_norm falsecon $controls, robust

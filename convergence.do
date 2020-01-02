@@ -14,9 +14,6 @@ use data_sender, clear
 cd ..
 run "clean_data_SENT.do"
 
-*UNEXPLAINED values:
-drop if exp_sender == 12.5 | exp_sender == 23
-
 *create dummy sud and treatment
 quietly: gen sud_X_ingroup = sud*ingroup
 
