@@ -145,12 +145,32 @@ sgmediation trasferimento, iv(sud) mv(ave_return_norm) cv(exp_receiver_norm exp_
 bootstrap r(ind_eff) r(dir_eff), reps (1000): sgmediation trasferimento, iv(sud) mv(ave_return_norm) cv(exp_receiver_norm exp_sender $controls)
 
 ***ROBUSTNESS CHECKS***
+* DEMOGRAPHICS TESTS
+* test whether association members from the south differ from non-members
+preserve
+drop if sud != 1 | years_in_PR == .
+bys membroatt : summ eta
+ranksum eta , by(membroatt)
+ranksum femmina, by(membroatt) // LESS WOMEN IN ASSOCIATIONS
+ranksum(abitanti_gr), by(membroatt)
+ranksum(laurea), by(membroatt)
+ranksum(pensionato), by(membroatt)
+ranksum(nubile), by(membroatt)
+ranksum(sodred_dum), by(membroatt)
+ranksum years_in_PR_norm, by(membroatt) // LESS YRS SPENT IN REGION IF MEMBER
+ranksum(trasferimento), by(membroatt)
+ranksum(ave_return_norm), by(membroatt)
+restore
+
 * FALSE CONSENSUS
 gen falsecon = 1 if trasferimento == exp_sender
 replace falsecon = 0 if falsecon == .
-eststo: ologit trasferimento sud $controls, robust
-eststo: ologit trasferimento sud falsecon $controls, robust
-eststo: ologit trasferimento sud exp_sender falsecon $controls, robust
-eststo: ologit trasferimento sud exp_receiver_norm falsecon $controls, robust
-eststo: ologit trasferimento sud ave_return_norm falsecon $controls, robust
+eststo clear
+ ologit trasferimento sud $controls, robust
+ ologit trasferimento sud falsecon $controls, robust
+ ologit trasferimento sud exp_sender falsecon $controls, robust
+ ologit trasferimento sud exp_receiver_norm falsecon $controls, robust
+ ologit trasferimento sud ave_return_norm falsecon $controls, robust
 eststo: ologit trasferimento sud exp_sender exp_receiver_norm ave_return_norm falsecon $controls, robust
+cd "..\$output_root"
+esttab using "false_consensus_sent.rtf", label r2 ar2 replace

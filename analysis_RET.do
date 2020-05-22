@@ -210,8 +210,11 @@ esttab using "table_receiver_decision_beliefs_convergence.rtf", label r2 ar2 rep
 gen falsecon = 1 if trasferimento == exp_sender
 replace falsecon = 0 if falsecon == .
 
-eststo: xttobit return_share sud falsecon $controls, ll(0) ul(1)
-eststo: xttobit return_share sud transfer_sm transfer_sm_2 falsecon $controls, ll(0) ul(1)
-eststo: xttobit return_share sud exp_sender falsecon $controls, ll(0) ul(1)
-eststo: xttobit return_share sud exp_receiver_norm falsecon $controls, ll(0) ul(1)
+ xttobit return_share sud falsecon $controls, ll(0) ul(1)
+ xttobit return_share sud transfer_sm transfer_sm_2 falsecon $controls, ll(0) ul(1)
+ xttobit return_share sud exp_sender falsecon $controls, ll(0) ul(1)
+ xttobit return_share sud exp_receiver_norm falsecon $controls, ll(0) ul(1)
 eststo: xttobit return_share sud transfer_sm transfer_sm_2 exp_sender exp_receiver_norm falsecon $controls, ll(0) ul(1)
+cd "..\$output_root"
+esttab using "false_consensus_ret.rtf", label r2 ar2 replace
+

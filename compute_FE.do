@@ -45,6 +45,8 @@ replace exp_receiver_25 =  . if trasferimento!=25
 
 * FE AmountSent
 gen forecast_error_transfer_all = exp_sender - mean_transfer_all
+* FE amount sent abosolute values
+gen abs_forecast_error_transfer_all = abs(forecast_error_transfer_all)
 
 * FE amountreturned
 gen forecast_error_return_0 =  exp_receiver_0 - mean_return_0
@@ -76,8 +78,8 @@ replace forecast_error_return_norm=forecast_error_return_15_norm if trasferiment
 replace forecast_error_return_norm=forecast_error_return_20_norm if trasferimento==20
 replace forecast_error_return_norm=forecast_error_return_25_norm if trasferimento==25
 
-gen forecast_error_return_norm_south = forecast_error_return_norm if sud == 1
-gen forecast_error_return_norm_north = forecast_error_return_norm if sud == 0
+* FE amountreturned absolute values
+gen abs_forecast_error_return_norm = abs(forecast_error_return_norm)
 
 /* OLD CODE ON FE
 
